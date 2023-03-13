@@ -24,7 +24,7 @@ Write LH,HR,Vertical structure data into one single .nc file (daily file)
 
 year = 2008
 ampm ='PM'
-sat = 'AIRS'
+sat = 'AIRS' # 'AIRS' or 'IASI'
 time = '0130' # 0130 for AIRS, 0930 for IASI
 model_type = '_'  # '_' for with ML, '_noML_' for without ML
 
@@ -50,7 +50,20 @@ for month in range(1,12+1):
     for day in range(1, days_in_month + 1):
         
         #print(f"{year}-{month:02d}-{day:02d}")
-        ds_Vert = xr.open_dataset(path_RV+f'L3_VertRR_CIRS-{sat}v2_{time}{ampm}_{year}{month:02d}{day:02d}.nc')
+        
+        try:
+            # some VertRR files missing, if missing files jump out of the current loop
+            ds_Vert = xr.open_dataset(path_RV+f'L3_VertRR_CIRS-{sat}v2_{time}{ampm}_{year}{month:02d}{day:02d}.nc')
+        
+        except FileNotFoundError:
+            
+            continue
+            
+        # sat name of IASI not coherent: 'IASI-A' for LH, and 'IASI' for other two.
+        if sat=='IASI':
+            sat1 = 'IASI-A'          
+        else:
+            sat1 = sat
         
         ds_LH = xr.open_dataset(path_LH+f'LH_{sat}_{year}{month:02d}{day:02d}_{time}{ampm}.nc')
         ds_LH = ds_LH.swap_dims({'latitude':'lat','longitude':'lon'})
@@ -59,7 +72,7 @@ for month in range(1,12+1):
         
         if (time == '0130' and ampm =='PM') or (time == '0930' and ampm =='AM'):
             
-            ds_SW = xr.open_dataset(path_RV+f'SW_{sat}-ERAI_v8_0130{ampm}_{year}{month:02d}{day:02d}.nc')
+            ds_SW = xr.open_dataset(path_RV+f'SW_{sat}-ERAI_v8_{time}{ampm}_{year}{month:02d}{day:02d}.nc')
             ds_all = xr.merge([ds_Vert,ds_LH, ds_LW, ds_SW],compat='override')
             
         else:
