@@ -1404,7 +1404,235 @@ LH_sys_map_0816(ds_AIRS_AM_16,ds_AIRS_PM_16,ds_sys_AM_16,ds_sys_AM_16,0,200,550,
 
 
 # In[ ]:
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CRE Ratio !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+levels = np.array([106.27, 
+                   131.20, 
+                   161.99, 
+                   200.00, 
+                   222.65,
+                   247.87, 
+                   275.95, 
+                   307.20, 
+                   341.99, 
+                   380.73, 
+                   423.85,
+                   471.86, 
+                   525.00, 
+                   584.80, 
+                   651.04, 
+                   724.78, 
+                   800.00, 
+                   848.69, 
+                   900.33,
+                   955.12,
+                   1013.00
+                  ])
 
+deltaPs = levels[1:] - levels[:-1]
+
+print(deltaPs)
+
+
+# In[ ]:
+# Ratio calculation function
+def Ratio_LH_CRE(ds_AM,ds_PM,clrLW_AM,clrLW_PM,clrSW,sat,ampm,year):
+# Calculate the ratio of radiative heating in diabatic heating
+
+    ds_LH_AM = ds_AM.LH.mean(['lat','lon','time']) * deltaPs / np.sum(deltaPs)
+    #print(ds_LH_AM.values)
+    ds_LH_PM = ds_AM.LH.mean(['lat','lon','time']) * deltaPs / np.sum(deltaPs)
+    
+    ds_LH_AM = ds_LH_AM.sum('level')
+    #print(ds_LH_AM.values)
+    ds_LH_PM = ds_LH_PM.sum('level')
+
+    
+    ds_LW_AM = ds_AM.sel(HR_level=HR_level[2:]).LW.mean(['lat','lon','time']) * deltaPs / np.sum(deltaPs)
+    #print(ds_LW_AM.values)
+    ds_LW_PM = ds_PM.sel(HR_level=HR_level[2:]).LW.mean(['lat','lon','time']) * deltaPs / np.sum(deltaPs)
+    ds_SW_AM = ds_AM.sel(HR_level=HR_level[2:]).SW.mean(['lat','lon','time']) * deltaPs / np.sum(deltaPs) 
+    ds_SW_PM = ds_PM.sel(HR_level=HR_level[2:]).SW.mean(['lat','lon','time']) * deltaPs / np.sum(deltaPs)
+    
+    ds_LW_AM = ds_LW_AM.sum('HR_level')
+    #print(ds_LW_AM.values)
+    ds_LW_PM = ds_LW_PM.sum('HR_level') 
+    ds_SW_AM = ds_SW_AM.sum('HR_level')
+    ds_SW_PM = ds_SW_PM.sum('HR_level')
+    
+    
+    ds_LH_day = ds_LH_AM + ds_LH_PM
+
+    
+    clrLW_AM = clrLW_AM.sel(HR_level=HR_level[2:]).LW.mean(['lat','lon'])* deltaPs / np.sum(deltaPs)
+    clrLW_AM = clrLW_AM.sum('HR_level')
+    
+    clrLW_PM = clrLW_PM.sel(HR_level=HR_level[2:]).LW.mean(['lat','lon'])* deltaPs / np.sum(deltaPs)
+    clrLW_PM = clrLW_PM.sum('HR_level')
+    
+    clrSW = clrSW.sel(HR_level=HR_level[2:]).SW.mean(['lat','lon'])* deltaPs / np.sum(deltaPs)
+    clrSW = clrSW.sum('HR_level')
+
+    
+    CRE = 0.5*(ds_LW_AM - clrLW_AM + ds_LW_PM - clrLW_PM) + coef_SW_Jan * (ds_SW_AM + ds_SW_PM - clrSW)
+    CRE_AM = ds_LW_AM - clrLW_AM
+    CRE_PM = ds_LW_PM - clrLW_PM + coef_SW_Jan * (ds_SW_PM - clrSW)  
+    
+    print(f'CRE: {CRE_AM.values}')
+    print(f'LH: {ds_LH_AM.values}')
+    
+    
+    if ampm == 'AM':
+        
+        ratio = CRE_AM.values /(CRE_AM.values + ds_LH_AM.values)
+        
+        print(f'Ratio of CRE/(CRE+LH): {ratio:.1%}')
+        
+    elif ampm == 'PM':
+        
+        ratio = CRE_PM.values /(CRE_PM.values + ds_LH_PM.values)
+        print(f'Ratio of CRE/(CRE+LH): {ratio:.1%}')
+        
+    elif ampm == 'day':
+
+        ratio = CRE.values /(CRE.values + ds_LH_day.values)
+        print(f'Ratio of CRE/(CRE+LH): {ratio:.1%}')
+    
+    return
+  
+# In[ ]:
+  Ratio_LH_CRE(
+    ds_AIRS_AM_08,ds_AIRS_PM_08,
+    clr_info_08['clrLW_AIRS_AM_map'],clr_info_08['clrLW_AIRS_PM_map'],clr_info_08['clrSW_AIRS_PM_map'],
+    'AIRS',
+    'PM',
+    '2008'
+)
+  
+# In[ ]:
+deltaPs_re = deltaPs[:, np.newaxis, np.newaxis]
+
+# Ratio plot function
+def LH_CRE_map_0816(ds_AM,ds_PM,clrLW_AM,clrLW_PM,clrSW,P_min,P_max,sat,ampm,year):
+
+    ds_LH_AM = ds_AM.LH.mean('time') * deltaPs_re / np.sum(deltaPs_re)
+    ds_LH_PM = ds_PM.LH.mean('time') * deltaPs_re / np.sum(deltaPs_re)
+
+    
+    ds_LW_AM = ds_AM.sel(HR_level=HR_level[2:]).LW.mean('time') * deltaPs_re / np.sum(deltaPs_re)
+    ds_LW_PM = ds_PM.sel(HR_level=HR_level[2:]).LW.mean('time') * deltaPs_re / np.sum(deltaPs_re)
+    
+    #print(ds_LW_AM.values.max())
+
+    
+    ds_SW_AM = ds_AM.sel(HR_level=HR_level[2:]).SW.mean('time') * deltaPs_re / np.sum(deltaPs_re)
+    ds_SW_PM = ds_PM.sel(HR_level=HR_level[2:]).SW.mean('time') * deltaPs_re / np.sum(deltaPs_re)
+    
+    
+    ds_LH_AM = ds_LH_AM.sum('level')
+    ds_LH_PM = ds_LH_PM.sum('level')
+    ds_LW_AM = ds_LW_AM.sum('HR_level')
+    ds_LW_PM = ds_LW_PM.sum('HR_level') 
+    ds_SW_AM = ds_SW_AM.sum('HR_level')
+    ds_SW_PM = ds_SW_PM.sum('HR_level')
+    
+#     print(ds_LH_AM.values.max())
+#     print(ds_LH_PM.values.max())
+    
+#     print(ds_LW_PM.values.max())
+#     print(ds_LW_PM.values.max())
+    
+#     print(ds_SW_AM.values.max())
+#     print(ds_SW_PM.values.max())
+
+    
+    
+    ds_LH_day = ds_LH_AM + ds_LH_PM
+    ds_LW_day = ds_LW_AM + ds_LW_PM
+
+
+    
+    clrLW_AM = clrLW_AM.sel(HR_level=HR_level[2:]).LW* deltaPs_re / np.sum(deltaPs_re)
+    clrLW_PM = clrLW_PM.sel(HR_level=HR_level[2:]).LW* deltaPs_re / np.sum(deltaPs_re)
+    clrSW = clrSW.sel(HR_level=HR_level[2:]).SW* deltaPs_re / np.sum(deltaPs_re)
+    
+    
+    clrLW_AM = clrLW_AM.sum('HR_level')
+    clrLW_PM = clrLW_PM.sum('HR_level')
+    clrSW = clrSW.sum('HR_level')
+    
+
+    
+    CRE = 0.5*(ds_LW_AM - clrLW_AM + ds_LW_PM - clrLW_PM) + coef_SW_Jan * (ds_SW_AM+ds_SW_PM - clrSW)
+    
+    CRE_AM = ds_LW_AM - clrLW_AM
+    CRE_PM = ds_LW_PM - clrLW_PM + coef_SW_Jan * (ds_SW_PM - clrSW)  
+    
+    
+    if ampm == 'AM':
+    
+        lon = CRE_AM.lon.values
+        lat = CRE_AM.lat.values
+        values = CRE_AM /(CRE_AM + ds_LH_AM)
+        print(values.values)
+
+        
+    elif ampm == 'PM':
+        
+        lon = CRE_PM.lon.values
+        lat = CRE_PM.lat.values
+        values = CRE_PM /(CRE_PM + ds_LH_PM)
+        print(values.values)
+        
+    elif ampm == 'day':
+
+        lon = CRE.lon.values
+        lat = CRE.lat.values
+        values = CRE /(CRE + ds_LH_day)
+        print(values.values)
+
+           
+    
+    fig = plt.figure(figsize=(18, 8),dpi = 600)
+    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree(central_longitude=180))    
+    
+        
+    im = ax.contourf(lon, lat, values,vmin=-10,vmax=10, transform=ccrs.PlateCarree(), cmap='RdBu_r',add_colorbar=True)
+   
+    ax.add_feature(cfeat.LAND, facecolor='0.9', edgecolor='black')
+    #ax.add_feature(cfeat.COASTLINE.with_scale('50m'), zorder=1, color='gray', edgecolor='black',alpha=0.8,linewidth=0.8)
+    ax.add_feature(cfeat.COASTLINE, edgecolor='black')
+    ax.gridlines(draw_labels=False, linewidth=1, color='gray', alpha=0.5, linestyle='--')
+    
+    # Set longitude and latitude tick labels
+    ax.set_xticks([-180, -120, -60, 0, 60, 120, 180], crs=ccrs.PlateCarree(central_longitude=180))
+    ax.set_xticklabels(['0', '60$^\circ$E', '120$^\circ$E', '180$^\circ$E', '120$^\circ$W', '60$^\circ$W', '0'], fontsize=12)
+    ax.set_yticks([-20, -10, 0, 10, 20])
+    ax.set_yticklabels(['20$^\circ$S', '10$^\circ$S', '0','10$^\circ$N', '20$^\circ$N'], fontsize=12)  
+    
+    position = fig.add_axes([0.16,0.27,0.7,0.02])
+    
+    #cbar = fig.colorbar(im, cax=position, orientation='horizontal',extend='both')
+    #cbar.ax.set_title('LH', fontsize=12, pad=-30)
+    
+    cb = plt.colorbar(im,cax=position,orientation='horizontal',extend='both')
+    #cb.mappable.set_clim(values.min(), values.max())
+    position.set_title('CRE (K/data-day)', loc='center',fontsize=14,weight='normal')
+
+    ax.set_title(f'CRE {sat} {year} {ampm}',fontsize=16,fontweight='bold')
+    #fig.savefig(plot_path + f'CRE_map_{model_type}_{P_min}_{P_max}_{sat}_{ampm}_{year}.png')
+    #plt.close()
+    
+    return
+
+  
+LH_CRE_map_0816(
+    ds_AIRS_AM_08,ds_AIRS_PM_08,
+    clr_info_08['clrLW_AIRS_AM_map'],clr_info_08['clrLW_AIRS_PM_map'],clr_info_08['clrSW_AIRS_PM_map'],
+    200,550,
+    'AIRS',
+    'AM',
+    '2008'
+)
 
 print(f'This script needed {(datetime.datetime.now() - start_time).seconds} seconds') 
 
