@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
-#!/usr/bin/env python
-# coding: utf-8
-
 """
 Created on Thu Mar  9 16:52:42 2023
 
@@ -34,8 +28,8 @@ Write LH,HR,Vertical structure data into one single .nc file (daily file)
 """
 
 # from 2004-2018 for AIRS, and 2008-2018 for IASI
-year_star = 2011
-year_end = 2011
+year_star = 2008
+year_end = 2018
 
 ampm ='AM' # 'AM' or 'PM'
 sat = 'IASI' # 'AIRS' or 'IASI'
@@ -47,14 +41,6 @@ HR_level = np.array([ 78.,  96., 119., 147., 181., 211.,
   824., 875., 928., 984.]
  )
 
-"""
-drwxrwxr-x 18 claudia ara 36864 14 mars  20:23 RRind3_noML_LH_nan0_phase2_data-day           (training, with IsolationForest)
-drwxr-xr-x  3 claudia ara  4096 18 mars  21:39 RRind3_LH_noclip_withfrac_phase2_data-day     (training, noclip with fracRR)
-drwxr-xr-x  3 claudia ara  4096 18 mars  22:59 RRind3_LH_noclip_phase2_data-day              (training, noclip)
-drwxr-xr-x  3 claudia ara  4096 19 mars  12:29 RRind_3classes_noML_noclip_test               (training, with fracRR, noclip and 5 vars removed)
-drwxr-xr-x  3 xchen   ara  4096 21 mars  14:12 RRind3_noML_LH_noclip_nofrac_phase2_data-day  (latest training, noclip, nofracRR,and 5 vars removed)
-"""
-
 for year in range(year_star, year_end+1):
 
  RV_path = f'/bdd/ARA/GEWEX_CA_ftp/deep_learning/results_phase2_data-day/{year}/'  #loholt 
@@ -64,7 +50,7 @@ for year in range(year_star, year_end+1):
 
 #################################### Merge LH, LW, SW and VertRR data to one single dataset ####################################
  
- for month in range(8,12+1): 
+ for month in range(1,12+1): 
 
      days_in_month = calendar.monthrange(year, month)[1]    
 
